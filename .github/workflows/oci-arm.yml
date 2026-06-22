@@ -2,8 +2,8 @@ name: OCI ARM Host Capacity
 
 on:
   schedule:
-    - cron: '*/15 * * * *'  # Runs every 15 minutes
-  workflow_dispatch:  # Allows manual trigger
+    - cron: '*/15 * * * *'
+  workflow_dispatch:
 
 jobs:
   create-instance:
@@ -23,17 +23,30 @@ jobs:
       - name: Create private key file
         run: |
           mkdir -p ~/.oci
-          echo "${{ secrets.OCI_PRIVATE_KEY }}" > ~/.oci/oci_api_key.pem
+          printf '%s' "${{ secrets.OCI_PRIVATE_KEY }}" > ~/.oci/oci_api_key.pem
           chmod 600 ~/.oci/oci_api_key.pem
 
       - name: Create .env file
         run: |
-          cat > .env << EOF
+          cat > .env << 'EOF'
           OCI_REGION=${{ secrets.OCI_REGION }}
           OCI_USER_ID=${{ secrets.OCI_USER_ID }}
           OCI_TENANCY_ID=${{ secrets.OCI_TENANCY_ID }}
           OCI_KEY_FINGERPRINT=${{ secrets.OCI_KEY_FINGERPRINT }}
           OCI_PRIVATE_KEY_FILENAME=/home/runner/.oci/oci_api_key.pem
+          OCI_SUBNET_ID=${{ secrets.OCI_SUBNET_ID }}
+          OCI_IMAGE_ID=${{ secrets.OCI_IMAGE_ID }}
+          OCI_OCPUS=${{ secrets.OCI_OCPUS }}
+          OCI_MEMORY_IN_GBS=${{ secrets.OCI_MEMORY_IN_GBS }}
+          OCI_MAX_INSTANCES=${{ secrets.OCI_MAX_INSTANCES }}
+          EOF
+          echo "OCI_SSH_PUBLIC_KEY=$(cat << 'KEYEOF'
+          ${{ secrets.OCI_SSH_PUBLIC_KEY }}
+          KEYEOF
+          )" >> .env
+
+      - name: Run capacity script
+        run: php ./index.php
           OCI_SUBNET_ID=${{ secrets.OCI_SUBNET_ID }}
           OCI_IMAGE_ID=${{ secrets.OCI_IMAGE_ID }}
           OCI_OCPUS=${{ secrets.OCI_OCPUS }}
